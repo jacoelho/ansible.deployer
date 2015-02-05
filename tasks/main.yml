@@ -20,7 +20,7 @@
     recurse: yes
     path: "{{ deployer_root_path }}/{{ deployer_application }}/shared/pids"
 
-- set_fact: Name release directory
+- set_fact:
     release_path: "{{ deployer_root_path }}/{{ deployer_application }}/releases/{{ timestamp.stdout }}"
 
 - name: Create release directory
@@ -33,7 +33,7 @@
 
 - name: checkout git repo into release directory
   git:
-    repo: "https://{{ GITHUB_TOKEN }}:x-oauth-basic@{{ deployer_organization }}/{{ deployer_application }}.git"
+    repo: "{{ deployer_repo }}"
     dest: "{{ release_path }}"
     version: "development"
   sudo_user: "{{ deployer_rails.user }}"
