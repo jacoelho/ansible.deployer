@@ -71,12 +71,12 @@
 - name: set ruby version
   alternatives:
     name: ruby
-    path: /usr/bin/ruby{% if deployed_ruby_version == '1.9.3' %}1.9.1{% else %}deployed_ruby_version{% endif %}
+    path: /usr/bin/ruby{% if deployer_ruby_version == '1.9.3' %}1.9.1{% else %}deployer_ruby_version{% endif %}
 
 - name: set gems version
   alternatives:
     name: gem
-    path: /usr/bin/gem{% if deployed_ruby_version == '1.9.3' %}1.9.1{% else %}deployed_ruby_version{% endif %}
+    path: /usr/bin/gem{% if deployer_ruby_version == '1.9.3' %}1.9.1{% else %}deployer_ruby_version{% endif %}
 
 - name: update gems
   shell: "bundle install --path {{ deployer_root_path }}/{{ deployer_application }}/shared/bundle --jobs {{ ansible_processor_count }} --without test development --deployment --quiet"
