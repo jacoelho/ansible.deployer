@@ -20,9 +20,8 @@
     recurse: yes
     path: "{{ deployer_root_path }}/{{ deployer_application }}/shared/pids"
 
-- name: Name release directory
-  command: echo "{{ deployer_root_path }}/{{ deployer_application }}/releases/{{ timestamp.stdout }}"
-  register: release_path
+- set_fact: Name release directory
+    release_path: "{{ deployer_root_path }}/{{ deployer_application }}/releases/{{ timestamp.stdout }}"
 
 - name: Create release directory
   file:
@@ -30,19 +29,19 @@
     owner: "{{ deployer_rails.user }}"
     group: "{{ deployer_rails.group }}"
     recurse: yes
-    path: "{{ release_path.stdout }}"
+    path: "{{ release_path }}"
 
 - name: checkout git repo into release directory
   git:
     repo: "https://{{ GITHUB_TOKEN }}:x-oauth-basic@{{ deployer_organization }}/{{ deployer_application }}.git"
-    dest: "{{ release_path.stdout }}"
+    dest: "{{ release_path }}"
     version: "development"
   sudo_user: "{{ deployer_rails.user }}"
 
 - name: link directories to current
   file:
     state: link
-    path: "{{ release_path.stdout }}/{{ item }}"
+    path: "{{ release_path }}/{{ item }}"
     src: "{{ deployer_root_path }}/{{ deployer_application }}/shared/{{ item }}"
     owner: "{{ deployer_rails.user }}"
     group: "{{ deployer_rails.group }}"
@@ -54,7 +53,7 @@
 - name: link configs
   file:
     state: link
-    path: "{{ release_path.stdout }}/config/{{ item }}"
+    path: "{{ release_path }}/config/{{ item }}"
     src: "{{ deployer_root_path }}/{{ deployer_application }}/shared/configs/{{ item }}"
     owner: "{{ deployer_rails.user }}"
     group: "{{ deployer_rails.group }}"
@@ -65,7 +64,7 @@
   file:
     state: link
     path: "{{ deployer_root_path }}/{{ deployer_application }}/current"
-    src: "{{ release_path.stdout }}"
+    src: "{{ release_path }}"
     owner: "{{ deployer_rails.user }}"
     group: "{{ deployer_rails.group }}"
 
@@ -82,7 +81,7 @@
 - name: update gems
   shell: "bundle install --path {{ deployer_root_path }}/{{ deployer_application }}/shared/bundle --jobs {{ ansible_processor_count }} --without test development --deployment --quiet"
   args:
-    chdir: "{{ release_path.stdout }}"
+    chdir: "{{ release_path }}"
   environment: "{{ deployer_env }}"
   sudo_user: "{{ deployer_rails.user }}"
 
