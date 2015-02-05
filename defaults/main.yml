@@ -1,0 +1,17 @@
+---
+
+deployer_rails:
+  user: rails
+  group: rails
+
+deployed_ruby_version: 1.9.3
+
+deployer_root_path: /var/www
+
+deployer_application:
+
+deployer_repo: "https://{{ GITHUB_TOKEN }}:x-oauth-basic@{{ deployer_organization }}/{{ deployer_application }}.git"
+
+deployer_env: []
+
+deployer_config_files: []
