@@ -4,7 +4,7 @@ deployer_rails:
   user: rails
   group: rails
 
-deployed_ruby_version: 1.9.3
+#deployer_ruby_version: 1.9.3
 
 deployer_root_path: /var/www
 
