@@ -25,7 +25,9 @@
     owner: "{{ deployer_rails.user }}"
     group: "{{ deployer_rails.group }}"
     recurse: yes
-    path: "{{ release_path }}"
+    path: "{{ item }}"
+  with_items:
+    - "{{ release_path }}"
 
 - name: checkout git repo into release directory
   git:
@@ -34,10 +36,33 @@
     version: "{{ deployer_branch }}"
   sudo_user: "{{ deployer_rails.user }}"
 
+- name: Create tmp directory
+  file:
+    state: directory
+    owner: "{{ deployer_rails.user }}"
+    group: "{{ deployer_rails.group }}"
+    recurse: yes
+    path: "{{ item }}"
+  with_items:
+    - "{{ release_path }}/tmp"
+
 - name: link directories to current
   file:
     state: link
     path: "{{ release_path }}/{{ item }}"
+    src: "{{ deployer_root_path }}/{{ deployer_application }}/shared/{{ item }}"
+    owner: "{{ deployer_rails.user }}"
+    group: "{{ deployer_rails.group }}"
+    force: yes
+  with_items:
+    - log
+    - pids
+  sudo_user: "{{ deployer_rails.user }}"
+
+- name: link directories to current
+  file:
+    state: link
+    path: "{{ release_path }}/tmp/{{ item }}"
     src: "{{ deployer_root_path }}/{{ deployer_application }}/shared/{{ item }}"
     owner: "{{ deployer_rails.user }}"
     group: "{{ deployer_rails.group }}"
@@ -95,8 +120,50 @@
   environment: "{{ deployer_env }}"
   sudo_user: "{{ deployer_rails.user }}"
 
+
+- name: check rake tasks
+  shell: "bundle exec rake -T 2>/dev/null"
+  args:
+    chdir: "{{ release_path }}"
+  environment: "{{ deployer_env }}"
+  sudo_user: "{{ deployer_rails.user }}"
+  register: rake_tasks
+  failed_when: False
+  changed_when: False
+
+- name: precompile assets
+  shell: "RAILS_GROUPS=assets bundle exec rake assets:precompile"
+  args:
+    chdir: "{{ release_path }}"
+  environment: "{{ deployer_env }}"
+  sudo_user: "{{ deployer_rails.user }}"
+  when: '"assets:precompile" in rake_tasks.stdout'
+
+- name: remove new relic file
+  file:
+    path: "{{ release_path}}/config/newrelic.yml"
+    state: absent
+
+- lineinfile:
+    dest: /etc/environment
+    state: absent 
+    regexp: "^export GITHUB_PARTYFOUL_TOKEN=.*"
+
 - name: remove older releases
   shell: "ls -t1 | tail -n +4 | xargs rm -r"
   ignore_errors: true
   args:
     chdir: "{{ deployer_root_path }}/{{ deployer_application }}/releases/"
+
+- name: restart passenger
+  file:
+    path: "{{ release_path }}/tmp/restart.txt"
+    state: touch
+  sudo_user: "{{ deployer_rails.user }}"
+
+- name: restart services
+  service: 
+    name: "{{ item }}"
+    state: restarted
+  with_items: deployer_services
+  ignore_errors: true
