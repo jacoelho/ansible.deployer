@@ -46,6 +46,16 @@
   with_items:
     - "{{ release_path }}/tmp"
 
+
+- name: remove directories if they exist
+  file:
+    state: absent
+    path: "{{ release_path }}/{{ item }}"
+  with_items:
+    - log
+    - pids
+  sudo_user: "{{ deployer_rails.user }}"
+
 - name: link directories to current
   file:
     state: link
@@ -78,6 +88,7 @@
     dest: "{{ deployer_root_path }}/{{ deployer_application }}/shared/config/"
     owner: "{{ deployer_rails.user }}"
     group: "{{ deployer_rails.group }}"
+    backup: yes
   sudo_user: "{{ deployer_rails.user }}"
 
 - name: link configs
@@ -112,6 +123,10 @@
     name: gem
     path: /usr/bin/gem{% if deployer_ruby_version == '1.9.3' %}1.9.1{% else %}{{ deployer_ruby_version }}{% endif %}
   when: deployer_ruby_version is defined
+
+- name: add github fingerprint
+  shell: ssh-keyscan github.com >> ~/.ssh/known_hosts
+  sudo_user: "{{ deployer_rails.user }}"
 
 - name: update gems
   shell: "bundle install --path {{ deployer_root_path }}/{{ deployer_application }}/shared/bundle --jobs {{ ansible_processor_count }} --without test development --deployment --quiet"
